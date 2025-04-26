@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -19,10 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# ! SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-r6)y@5q*e15k_#12o@+w_5v4tzbu0+07sg6d^y0e73*ov+f!5v'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# ! SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
@@ -37,6 +38,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    #Third party apps
+    'rest_framework',
+    'django_extensions',
+
+    #Our apps
+    'cvgen.apps.CvgenConfig',
+    'accounts.apps.AccountsConfig',
+    
+
 ]
 
 MIDDLEWARE = [
