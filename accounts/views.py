@@ -6,6 +6,9 @@ from rest_framework import status
 from .serializers import SignUpSerializer
 from django.db import DatabaseError
 
+# Todo: Check login func, Add email verfication, logout , reset password, update user data, delete user, 
+
+
 class RegisterApiView(APIView):
     def post(self, request):
         data = request.data
@@ -27,11 +30,20 @@ class RegisterApiView(APIView):
                                 "massage": "There is already an account with this email."}, 
                             status=status.HTTP_400_BAD_REQUEST)
         
+        if not first_name:
+            first_name = " "
+        
+        if not last_name:
+            last_name = " "
+        
+        # Todo: Add regex for validate password
+
         hashed_password = make_password(password=password)
 
         try:
             User.objects.create(email=email, username=username, password=hashed_password, first_name=first_name, last_name=last_name)
-        except DatabaseError: # Todo: We can't show this error code to the user, but we need to store it somewhere, right?
+        except DatabaseError as e: # Todo: We can't show this error code to the user, but we need to store it somewhere, right?
+            print(f"HATA: {e}")
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response({"details": "success", 
