@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from .serializers import SignUpSerializer
 from django.db import DatabaseError
+import re
 
 # Todo: Check login func, Add email verfication, logout , reset password, update user data, delete user, 
 
@@ -36,7 +37,12 @@ class RegisterApiView(APIView):
         if not last_name:
             last_name = " "
         
-        # Todo: Add regex for validate password
+        pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$'
+        if not re.match(pattern, password):
+            return Response({"details": "Password is weak", 
+                            "massage": "The password must contain at least one uppercase letter, one lowercase letter and a number."}, 
+                            status=status.HTTP_400_BAD_REQUEST)
+        
 
         hashed_password = make_password(password=password)
 
