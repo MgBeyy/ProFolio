@@ -1,11 +1,5 @@
 
-
-
-#  ?: we may need to overwrite the default user model. So let's leave this here for now. 
-
-
-
-
+#  ?: we may need to overwrite the default user model. So let's leave this here for now.
 
 
 # from django.contrib.auth.models import AbstractUser
@@ -22,4 +16,3 @@
 
 #     def __str__(self):
 #         return self.email
-    
