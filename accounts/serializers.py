@@ -12,3 +12,10 @@ class SignUpSerializer(serializers.ModelSerializer):
             "password": {"write_only": True, "min_length": 8},
             "username": {"required": False, "allow_blank": True},
         }
+
+
+class UserDataSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "email",)

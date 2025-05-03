@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from rest_framework import status
-from .serializers import SignUpSerializer
+from rest_framework.permissions import IsAuthenticated
+from .serializers import SignUpSerializer, UserDataSerializer
 from django.db import DatabaseError
 import re
 
@@ -73,3 +74,14 @@ class RegisterApiView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+
+class CurrentUserApiView(APIView):
+    
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = UserDataSerializer(request.user)
+        return Response({"details:": f"Kullanıcı = {user.data}"},status=status.HTTP_200_OK)
+
