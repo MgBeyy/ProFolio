@@ -8,7 +8,10 @@ from .serializers import SignUpSerializer, UserDataSerializer
 from django.db import DatabaseError
 import re
 
-# Todo: Check login func, Add email verfication, logout , reset password, update user data, delete user,
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+# Todo: Check login func, Add email verfication, reset password, update user data, delete user,
 
 
 class RegisterApiView(APIView):
@@ -76,12 +79,54 @@ class RegisterApiView(APIView):
         )
 
 
+# ? Does this really work? How can we be sure??
+class LogoutApiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            r_token = RefreshToken(refresh_token)
+            r_token.blacklist()
+            return Response(
+                {
+                    "details": "success",
+                    "massage": "Successfully logged out.",
+                },
+                status=status.HTTP_205_RESET_CONTENT,
+            )
+        except Exception:
+            return Response(
+                {
+                    "details": "erorr",
+                    "massage": "Logout failed. Please check the information and try again.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
 
 class CurrentUserApiView(APIView):
-    
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = UserDataSerializer(request.user)
-        return Response({"details:": f"Kullanıcı = {user.data}"},status=status.HTTP_200_OK)
+        return Response(
+            {"details:": f"Kullanıcı = {user.data}"}, status=status.HTTP_200_OK
+        )
 
+
+
+# from datetime import datetime, timedelta
+# from django.shortcuts import get_object_or_404
+# from django.utils.crypto import get_random_string
+# from .models import UserEmailToken
+# class ForgotPasswordApiView(APIView):
+#     def get(self, request):
+#         data = request.data
+#         user = get_object_or_404(User, data.get["email"])
+#         token = get_random_string(40)
+#         expire_date = datetime.now() + timedelta(minutes=10)
+
+#         user.email_token.reset_password_token = token
+#         user.email_token.reset_password_expire = expire_date
+#         user.email_token.save()
