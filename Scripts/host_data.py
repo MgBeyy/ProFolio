@@ -1,8 +1,8 @@
-from os import environ
-environ.setdefault('DJANGO_SETTINGS_MODULE','core.settings')
+# from os import environ
+# environ.setdefault('DJANGO_SETTINGS_MODULE','core.settings')
 
-import django
-django.setup
+# import django
+# django.setup()
 
 
 
