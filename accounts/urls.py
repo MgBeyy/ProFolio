@@ -9,4 +9,5 @@ urlpatterns = [
     path("user/", views.UserApiView.as_view(), name="user"),
     path("logout/", views.LogoutApiView.as_view(), name="logout"),
     path("reset_password/", views.PasswordResetApiView.as_view(), name="reset_password"),
+    path("verify_email/", views.VerifyEmailApiView.as_view(), name="verify_email"),
 ]

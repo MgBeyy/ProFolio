@@ -16,12 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from accounts.views import VerifyEmailApiView, PasswordResetConfirmApiView
+from accounts.views import VerifyEmailConfirmApiView, PasswordResetConfirmApiView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/cvgen/', include('cvgen.urls')),
     path('api/acco/', include('accounts.urls')),
-    path("verify_email/", VerifyEmailApiView.as_view(), name="verify_email"),
+    path("verify_email/", VerifyEmailConfirmApiView.as_view(), name="verify_email_confirm"),
     path("reset_password/", PasswordResetConfirmApiView.as_view(), name="reset_password_confirm"),
 ]

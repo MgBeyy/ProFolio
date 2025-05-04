@@ -1,4 +1,3 @@
-import email
 from Scripts.host_data import get_current_host_url
 from accounts.models import UserEmailToken
 from rest_framework.views import APIView
@@ -68,7 +67,7 @@ class RegisterApiView(APIView):
         hashed_password = make_password(password=password)
 
         try:
-            user = User.objects.create(
+            _ = User.objects.create(
                 email=email,
                 username=username,
                 password=hashed_password,
@@ -85,9 +84,29 @@ class RegisterApiView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        # Email verification
+        return Response(
+            {
+                "result": "success",
+                "message": "Successfully created account.",
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
-        user_token = UserEmailToken.objects.create(
+
+class VerifyEmailApiView(APIView):
+    def get(self, request):
+        user_email = request.data.get("email")
+        if not User.objects.filter(email=user_email).exists():
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "There is no account associated with this email.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        user = User.objects.filter(email=user_email).first()
+
+        user_token = UserEmailToken.objects.get_or_create(
             user=user,
             email_verification_token=get_random_string(40),
             email_verification_expire=timezone.now() + timedelta(minutes=10),
@@ -159,11 +178,10 @@ class UserApiView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-    
+
     def put(self, request):
         req_user = UserDataSerializer(request.user)
         user = User.objects.filter(email=req_user.get("email")).first()
-
 
         first_name = request.data.get("first_name")
         last_name = request.data.get("last_name")
@@ -172,15 +190,15 @@ class UserApiView(APIView):
         if email != user.email:
             if User.objects.filter(email=email).exists():
                 return Response(
-                {
-                    "result": "fail",
-                    "message": "There is already an account with this email.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "result": "fail",
+                        "message": "There is already an account with this email.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             user.email_token.is_verified = False
             user.email_token.save()
-        
+
         user.email = email
         user.first_name = first_name
         user.last_name = last_name
@@ -193,7 +211,7 @@ class UserApiView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-    
+
     def delete(self, request):
         req_user = UserDataSerializer(request.user)
         user = User.objects.filter(email=req_user.get("email")).first()
@@ -209,9 +227,7 @@ class UserApiView(APIView):
         )
 
 
-
-
-class VerifyEmailApiView(APIView):
+class VerifyEmailConfirmApiView(APIView):
     def get(self, request):
         token = request.query_params.get("token")
 
@@ -376,5 +392,3 @@ class PasswordResetConfirmApiView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-
-
