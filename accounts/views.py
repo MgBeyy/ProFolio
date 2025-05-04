@@ -1,3 +1,4 @@
+import email
 from Scripts.host_data import get_current_host_url
 from accounts.models import UserEmailToken
 from rest_framework.views import APIView
@@ -146,18 +147,68 @@ class LogoutApiView(APIView):
             )
 
 
-class CurrentUserApiView(APIView):
+class UserApiView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = UserDataSerializer(request.user)
         return Response(
             {
-                "result": "fail",
+                "result": "success",
                 "message": f"Kullanıcı = {user.data}",
             },
             status=status.HTTP_200_OK,
         )
+    
+    def put(self, request):
+        req_user = UserDataSerializer(request.user)
+        user = User.objects.filter(email=req_user.get("email")).first()
+
+
+        first_name = request.data.get("first_name")
+        last_name = request.data.get("last_name")
+        email = request.data.get("email")
+
+        if email != user.email:
+            if User.objects.filter(email=email).exists():
+                return Response(
+                {
+                    "result": "fail",
+                    "message": "There is already an account with this email.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+                )
+            user.email_token.is_verified = False
+            user.email_token.save()
+        
+        user.email = email
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+
+        return Response(
+            {
+                "result": "success",
+                "message": "Successfly updated user data.",
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+    def delete(self, request):
+        req_user = UserDataSerializer(request.user)
+        user = User.objects.filter(email=req_user.get("email")).first()
+        user.is_active = False
+        user.save()
+
+        return Response(
+            {
+                "result": "success",
+                "message": "User has been successfully inactivated. After 15 days it will be permanently deleted.",
+            },
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+
 
 
 class VerifyEmailApiView(APIView):
@@ -325,3 +376,5 @@ class PasswordResetConfirmApiView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
