@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from Scripts.host_data import get_current_host_url
 from accounts.models import UserEmailToken
 from rest_framework.views import APIView
@@ -100,7 +99,7 @@ class RegisterApiView(APIView):
             to_email=user.email,
             subject="Email Verification For ProFolio",
             message="Please click on the link to verify your email: \n "
-            f"{host}api/acco/verify_email/{user_token.email_verification_token}",
+            f"{host}verify_email?token={user_token.email_verification_token}",
         )
 
         if is_sent:
@@ -162,18 +161,31 @@ class CurrentUserApiView(APIView):
 
 
 class VerifyEmailApiView(APIView):
-    def get(self, request, token):
-        email_token = get_object_or_404(UserEmailToken, email_verification_token=token)
+    def get(self, request):
+        token = request.query_params.get("token")
+
+        if not UserEmailToken.objects.filter(email_verification_token=token).exists():
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "This verification link is invalid.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        email_token = UserEmailToken.objects.filter(
+            email_verification_token=token
+        ).first()
 
         if email_token.email_verification_expire < timezone.now():
             return Response(
                 {
                     "result": "fail",
-                    "message": "This verification link is invalid or has expired.",
+                    "message": "This verification link has expired.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        email_token.email_verification_token = ""
         email_token.is_verified = True
         email_token.save()
 
@@ -181,6 +193,135 @@ class VerifyEmailApiView(APIView):
             {
                 "result": "success",
                 "message": "Email successfully verified.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetApiView(APIView):
+    def get(self, request):
+        email = request.data.get("email")
+
+        if not User.objects.filter(email=email).exists():
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "There is no account with this email. Please register first.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(email=email).first()
+
+        user_token, _ = UserEmailToken.objects.get_or_create(user=user)
+
+        user_token.reset_password_token = get_random_string(40)
+        user_token.reset_password_expire = timezone.now() + timedelta(minutes=10)
+        user_token.save()
+
+        host = get_current_host_url(request)
+
+        is_sent, response = send_mail_via_mailgun(
+            to_email=user.email,
+            subject="Reset Password For ProFolio",
+            message="Please click on the link to reset your password: \n "
+            f"{host}reset_password?token={user_token.reset_password_token}",
+        )
+
+        if is_sent:
+            return Response(
+                {
+                    "result": "success",
+                    "message": "The password reset email was sent successfully. Please check your email inbox and click on the link in the email.",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "The password reset email could not be sent. Please try again later.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class PasswordResetConfirmApiView(APIView):
+    def get(self, request):
+        token = request.query_params.get("token")
+
+        if not UserEmailToken.objects.filter(reset_password_token=token).exists():
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "This password reset link is invalid.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        email_token = UserEmailToken.objects.filter(reset_password_token=token).first()
+
+        if email_token.reset_password_expire < timezone.now():
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "This password reset link has expired.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "result": "success",
+                "message": "Link is valid. Please put your new password.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def put(self, request):
+        token = request.query_params.get("token")
+
+        if not UserEmailToken.objects.filter(reset_password_token=token).exists():
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "This password reset link is invalid.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        email_token = UserEmailToken.objects.filter(reset_password_token=token).first()
+
+        if email_token.reset_password_expire < timezone.now():
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "This password reset link has expired.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        password = request.data.get("password")
+        pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$"
+        if not re.match(pattern, password):
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "The password must contain at least one uppercase letter, one lowercase letter and a number.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        email_token.reset_password_token = ""
+        email_token.save()
+
+        user = email_token.user
+        hashed_password = make_password(password=password)
+        user.password = hashed_password
+        user.save()
+
+        return Response(
+            {
+                "result": "success",
+                "message": "Password reset successfully.",
             },
             status=status.HTTP_200_OK,
         )

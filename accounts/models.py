@@ -9,6 +9,8 @@ class UserEmailToken(models.Model):
     email_verification_token = models.CharField(max_length=50, default="", blank=True)
     email_verification_expire = models.DateTimeField(null=True, blank=True)
     is_verified = models.BooleanField(default=True)
+    reset_password_token = models.CharField(max_length=50, default="", blank=True)
+    reset_password_expire = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "User Email Tokens"
