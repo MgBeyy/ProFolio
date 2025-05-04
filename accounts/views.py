@@ -16,9 +16,6 @@ from django.utils.crypto import get_random_string
 from Scripts.mail import send_mail_via_mailgun
 
 
-# Todo: update user data, delete user
-
-
 class RegisterApiView(APIView):
     def post(self, request):
         data = request.data
