@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import *
+from cvgen import models
 
 # Register your models here.
-admin.site.register(Profile)
-admin.site.register(Skills)
-admin.site.register(Projects)
-admin.site.register(Interview)
-admin.site.register(InterviewQuestions)
-admin.site.register(GeneratedCvs)
+admin.site.register(models.Profile)
+admin.site.register(models.Skills)
+admin.site.register(models.Projects)
+admin.site.register(models.Interview)
+admin.site.register(models.InterviewQuestions)
+admin.site.register(models.Cv)

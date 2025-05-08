@@ -1,5 +1,6 @@
 from Scripts.host_data import get_current_host_url
 from accounts.models import UserEmailToken
+from cvgen.models import Profile
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.models import User
@@ -7,7 +8,6 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .serializers import SignUpSerializer, UserDataSerializer
-from django.db import DatabaseError
 import re
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
@@ -64,14 +64,15 @@ class RegisterApiView(APIView):
         hashed_password = make_password(password=password)
 
         try:
-            _ = User.objects.create(
+            user = User.objects.create(
                 email=email,
                 username=username,
                 password=hashed_password,
                 first_name=first_name,
                 last_name=last_name,
             )
-        except DatabaseError as e:  # Todo: We can't show this error code to the user, but we need to store it somewhere, right?
+            _ = Profile.objects.create(user=user)
+        except Exception as e:  # Todo: We can't show this error code to the user, but we need to store it somewhere, right?
             print(f"HATA: {e}")
             return Response(
                 {
