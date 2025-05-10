@@ -1,5 +1,7 @@
-from cvgen.models import Profile
+from Scripts.ai_request import parse_json_block, process_file_with_gemini
+from cvgen.models import Cv, Profile
 from cvgen.serializers import UploadCvSerializer
+from helpers.ai_prompts import ANALYZE_CV_PROMPT
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -38,6 +40,39 @@ class UploadCvApiView(APIView):
             status=status.HTTP_200_OK,
             )
 
+
+class AnalyzeCvWithAiApiView(APIView):
+    
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        profile = user.profile
+        cv_obj = Cv.objects.filter(profile=profile).first()
+        cv_file = cv_obj.file.path
+        
+
+        analyze_result = process_file_with_gemini(file_path=cv_file, prompt_text=ANALYZE_CV_PROMPT)
+
+
+        parsed_result = parse_json_block(analyze_result)
+
+        if parsed_result is None:
+            return Response(
+            {
+            "result": "fail",
+            "message": "An error occurred while parsing the result.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        data = parsed_result
+        return Response(
+        {
+            "result": "success",
+            "data": data,
+        },
+        status=status.HTTP_200_OK,
+        )
 
 
 class TestApiViews(APIView):
