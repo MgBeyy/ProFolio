@@ -12,6 +12,9 @@ class UserEmailToken(models.Model):
     reset_password_token = models.CharField(max_length=50, default="", blank=True)
     reset_password_expire = models.DateTimeField(null=True, blank=True)
 
+    def __str__(self):
+        return f"Email token for {self.user.username}"
+
     class Meta:
         verbose_name = "User Email Tokens"
         verbose_name_plural = "Users Email Tokens"
