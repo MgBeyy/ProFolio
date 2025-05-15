@@ -2,6 +2,8 @@ import os
 import google.generativeai as gen_ai
 from decouple import config
 import json
+from datetime import datetime
+
 
 API_KEY = config("GEMINI_API_KEY")
 if not API_KEY:
@@ -45,3 +47,12 @@ def parse_json_block(raw_text: str) -> dict | None:
     except json.JSONDecodeError as e:
         print(f"[HATA] JSON ayrıştırılamadı: {e}\n {raw_text}")
         return None
+
+
+
+def parse_date(date_str):
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").date()
+        except Exception as e:
+            print(f"[HATA] Tarih ayrıştırılamadı: {e}\n {date_str}")
+            return None
