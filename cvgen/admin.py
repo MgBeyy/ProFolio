@@ -1,10 +1,7 @@
 from django.contrib import admin
 from cvgen import models
 
-# Register your models here.
-admin.site.register(models.Profile)
-admin.site.register(models.Skills)
-admin.site.register(models.Projects)
-admin.site.register(models.Interview)
-admin.site.register(models.InterviewQuestions)
-admin.site.register(models.Cv)
+
+for model in models.__dict__.values():
+    if hasattr(model, '__module__') and model.__module__ == 'cvgen.models' and not getattr(model._meta, 'abstract', False):
+        admin.site.register(model)
