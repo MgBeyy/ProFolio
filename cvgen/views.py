@@ -1,5 +1,5 @@
 from Scripts.ai_request import parse_json_block, process_file_with_gemini, parse_date
-from cvgen import models
+from cvgen import models, serializers
 from cvgen.serializers import UploadCvSerializer
 from helpers.ai_prompts import ANALYZE_CV_PROMPT
 from rest_framework.views import APIView
@@ -7,12 +7,84 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
-
-# Create your views here.
-# Todo: ProfileViews from CV doc (Get, Post, Put, Delete)
-# Todo: ProfileViews from FORM (Get, Post, Put, Delete)
+from rest_framework import viewsets
 # Todo: Cv generator views
 # Todo: interview init and questions views
+
+
+class BaseUserRelatedViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def get_profile(self):
+        return self.request.user.profile
+
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    serializer_class = serializers.ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return models.Profile.objects.filter(user=self.request.user)
+
+
+class ExperienceViewSet(BaseUserRelatedViewSet):
+    serializer_class = serializers.ExperienceSerializer
+
+    def get_queryset(self):
+        return models.Experience.objects.filter(profile=self.get_profile())
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.get_profile())
+
+
+class EducationViewSet(BaseUserRelatedViewSet):
+    serializer_class = serializers.EducationSerializer
+
+    def get_queryset(self):
+        return models.Education.objects.filter(profile=self.get_profile())
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.get_profile())
+
+
+class CertificationViewSet(BaseUserRelatedViewSet):
+    serializer_class = serializers.CertificationSerializer
+
+    def get_queryset(self):
+        return models.Certification.objects.filter(profile=self.get_profile())
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.get_profile())
+
+
+class LanguageViewSet(BaseUserRelatedViewSet):
+    serializer_class = serializers.LanguageSerializer
+
+    def get_queryset(self):
+        return models.Language.objects.filter(profile=self.get_profile())
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.get_profile())
+
+
+class SkillViewSet(BaseUserRelatedViewSet):
+    serializer_class = serializers.SkillSerializer
+
+    def get_queryset(self):
+        return models.Skill.objects.filter(profile=self.get_profile())
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.get_profile())
+
+
+class ProjectViewSet(BaseUserRelatedViewSet):
+    serializer_class = serializers.ProjectSerializer
+
+    def get_queryset(self):
+        return models.Project.objects.filter(profile=self.get_profile())
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.get_profile())
 
 
 class UploadCvApiView(APIView):
@@ -47,14 +119,13 @@ class AnalyzeCvWithAiApiView(APIView):
     def get(self, request):
         user = request.user
         profile, _ = models.Profile.objects.get_or_create(user=user)
-        cv_obj = models.Cv.objects.filter(profile=profile).order_by("-created_at").first()
+        cv_obj = (
+            models.Cv.objects.filter(profile=profile).order_by("-created_at").first()
+        )
 
         if not cv_obj or not cv_obj.file:
             return Response(
-                {
-                    "result": "fail",
-                    "message": "CV file not found."
-                },
+                {"result": "fail", "message": "CV file not found."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -77,7 +148,6 @@ class AnalyzeCvWithAiApiView(APIView):
             profile.summary = parsed_result.get("summary", "")
             profile.save()
 
-            
             models.Experience.objects.filter(profile=profile).delete()
             models.Education.objects.filter(profile=profile).delete()
             models.Certification.objects.filter(profile=profile).delete()
@@ -85,7 +155,6 @@ class AnalyzeCvWithAiApiView(APIView):
             models.Skill.objects.filter(profile=profile).delete()
             models.Project.objects.filter(profile=profile).delete()
 
-            
             for exp in parsed_result.get("experience", []):
                 models.Experience.objects.create(
                     profile=profile,
@@ -148,7 +217,7 @@ class AnalyzeCvWithAiApiView(APIView):
         return Response(
             {"result": "success", "message": "Successfully analyzed the CV."},
             status=status.HTTP_200_OK,
-        ) 
+        )
 
 
 class TestApiViews(APIView):
