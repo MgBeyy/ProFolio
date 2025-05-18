@@ -8,6 +8,10 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import viewsets
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from Scripts.file_converter import convert_html_to_pdf
+
 # Todo: Cv generator views
 # Todo: interview init and questions views
 
@@ -232,3 +236,40 @@ class TestApiViews(APIView):
 
     def delete(self, request):
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class GenerateCvPdfView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if user.first_name is None or user.last_name is None:
+            return Response(
+                {"result": "fail", "message": "User name or last name is not set."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        
+        profile = models.Profile.objects.get(user=user)
+        experience = profile.experience.all()
+        education = profile.education.all()
+        certifications = profile.certifications.all()
+        languages = profile.languages.all()
+        skills = profile.skills.all()
+        projects = profile.projects.all()
+
+        context = {
+            "profile": profile,
+            "experience": experience,
+            "education": education,
+            "certifications": certifications,
+            "languages": languages,
+            "skills": skills,
+            "projects": projects,
+        }
+
+        html_string = render_to_string("cv_template.html", context, request=request)
+        pdf_content = convert_html_to_pdf(html_string)
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = "filename=converted.pdf"
+        return response

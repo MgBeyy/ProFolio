@@ -20,6 +20,7 @@ router.register("project", views.ProjectViewSet, basename="project")
 urlpatterns = [
     path('upload_cv/', views.UploadCvApiView.as_view(), name='upload_cv'),
     path('analyze_cv/', views.AnalyzeCvWithAiApiView.as_view(), name='analyze_cv'),
+    path('generate_cv/', views.GenerateCvPdfView.as_view(), name='generate_cv'),
     
     path('test/', views.TestApiViews.as_view(), name='test'), # Todo: Delete this before deploying
 
