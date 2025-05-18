@@ -179,7 +179,7 @@ class UserApiView(APIView):
 
     def put(self, request):
         req_user = UserDataSerializer(request.user)
-        user = User.objects.filter(email=req_user.get("email")).first()
+        user = User.objects.filter(email=req_user.data.get("email")).first()
 
         first_name = request.data.get("first_name")
         last_name = request.data.get("last_name")
