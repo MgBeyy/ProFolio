@@ -120,12 +120,13 @@ class Interview(BaseModel):
 class InterviewQuestion(BaseModel):
     question = models.TextField(blank=True, null=True)
     user_answer = models.TextField(blank=True, null=True)
-    correct_answer = models.TextField(blank=True, null=True)
+    feedback = models.TextField(blank=True, null=True)
+    degree = models.IntegerField(blank=True, null=True)
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name="questions")
     interview = models.ForeignKey(
         Interview, on_delete=models.CASCADE, related_name="questions"
     )
-
+    
     def __str__(self):
         return f"Question about {self.skill.name}"
 
