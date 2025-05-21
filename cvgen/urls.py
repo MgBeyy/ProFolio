@@ -22,6 +22,7 @@ urlpatterns = [
     path('analyze_cv/', views.AnalyzeCvWithAiApiView.as_view(), name='analyze_cv'),
     path('generate_cv/', views.GenerateCvPdfView.as_view(), name='generate_cv'),
     path('start_interview/', views.StartInterviewApiView.as_view(), name='start_interview'),
+    path('next_question/', views.NextQuestionApiView.as_view(), name='next_question'),
     path('test/', views.TestApiViews.as_view(), name='test'), # Todo: Delete this before deploying
 
 

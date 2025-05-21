@@ -57,7 +57,7 @@ def parse_date(date_str):
 
 
 
-def generate_interview_question_gemini(
+def send_prompt_to_gemini(
     prompt_text: str,
     model_name: str = "gemini-2.5-flash-preview-04-17",
 ):

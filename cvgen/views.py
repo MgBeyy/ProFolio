@@ -2,11 +2,11 @@ from Scripts.ai_request import (
     parse_json_block,
     process_file_with_gemini,
     parse_date,
-    generate_interview_question_gemini,
+    send_prompt_to_gemini,
 )
 from cvgen import models, serializers
 from cvgen.serializers import UploadCvSerializer
-from helpers.ai_prompts import ANALYZE_CV_PROMPT, get_interview_prompt
+from helpers.ai_prompts import ANALYZE_CV_PROMPT, get_interview_prompt, get_answer_analysis_prompt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -292,16 +292,14 @@ class StartInterviewApiView(APIView):
             interview = models.Interview.objects.create(profile=profile)
 
             prompt = get_interview_prompt(profile.skills.all(), profile.language)
-            print("PROMPT:", prompt)
 
-            result = generate_interview_question_gemini(prompt_text=prompt)
-            print("RESULT:", result)
+            ai_result = send_prompt_to_gemini(prompt_text=prompt)
 
-            result = parse_json_block(result)
+            ai_result = parse_json_block(ai_result)
 
-            question = result.get("question", "")
+            question = ai_result.get("question")
             skill = models.Skill.objects.filter(
-                profile=profile, name=result.get("skill")
+                profile=profile, name=ai_result.get("skill")
             ).first()
 
             interview_question = models.InterviewQuestion.objects.create(
@@ -316,6 +314,130 @@ class StartInterviewApiView(APIView):
                         "interview_id": interview.id,
                         "question_id": interview_question.id,
                         "question": question,
+                        "skill": skill.name,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            print("EXCEPTION:", e)
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "An error occurred, please try again.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+
+class NextQuestionApiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # TODO: What errors can occur and how to handle them?
+
+    def post(self, request):
+        print("REQUEST DATA:", request.data)
+        try:
+            user = request.user
+            profile = models.Profile.objects.get(user=user)
+            if request.data.get("interview_id"):
+                if models.Interview.objects.filter(id=request.data.get("interview_id")).exists():
+                    interview = models.Interview.objects.get(id=request.data.get("interview_id"))
+                else:
+                    return Response(
+                        {
+                            "result": "fail",
+                            "message": "Interview not found.",
+                        },
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+            else:
+                interview = models.Interview.objects.filter(profile=profile).order_by("-created_at").first()
+
+            if not interview:
+                return Response(
+                    {
+                        "result": "fail",
+                        "message": "No interview found. Please start an interview first.",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            
+            if request.data.get("question_id"):
+                if models.InterviewQuestion.objects.filter(id=request.data.get("question_id")).exists():
+                    perv_question = models.InterviewQuestion.objects.get(id=request.data.get("question_id"))
+                else:
+                    return Response(
+                        {
+                            "result": "fail",
+                            "message": "Question not found.",
+                        },
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+            else:
+                perv_question = interview.questions.order_by("-created_at").first()
+
+            if not perv_question:
+                return Response(
+                    {
+                        "result": "fail",
+                        "message": "No question found. Please start an interview first.",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if request.data.get("answer"):
+                answer = request.data.get("answer")
+                prompt = get_answer_analysis_prompt(
+                    question=perv_question.question,
+                    answer=answer,
+                    language=profile.language,
+                )
+                answer_analysis = send_prompt_to_gemini(
+                    prompt_text=prompt,
+                )
+                answer_analysis = parse_json_block(answer_analysis)
+                correct_part = answer_analysis.get("correct_part")
+                wrong_part = answer_analysis.get("wrong_part")
+                degree = answer_analysis.get("degree")
+                perv_question.degree = degree
+                perv_question.feedback = f"Correct part: {correct_part}\nWrong part: {wrong_part}"
+                perv_question.save()
+                feedback = {
+                            "question": perv_question.question,
+                            "correct_part": correct_part,
+                            "wrong_part": wrong_part,
+                            "degree": degree,
+                        }
+            else:
+                feedback = None
+            
+            
+            
+            prompt = get_interview_prompt(profile.skills.all(), profile.language)
+
+            ai_result = send_prompt_to_gemini(prompt_text=prompt)
+            ai_result = parse_json_block(ai_result)
+
+            next_question = ai_result.get("question")
+            skill = models.Skill.objects.filter(
+                profile=profile, name=ai_result.get("skill")
+            ).first()
+
+            interview_question = models.InterviewQuestion.objects.create(
+                interview=interview, question=next_question, skill=skill
+            )
+
+            return Response(
+                {
+                    "result": "success",
+                    "message": "Next question generated successfully.",
+                    "data": {
+                        "interview_id": interview.id,
+                        "feedback": feedback,
+                        "question_id": interview_question.id,
+                        "question": next_question,
                         "skill": skill.name,
                     },
                 },
