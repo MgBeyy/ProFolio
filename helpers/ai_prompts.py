@@ -52,3 +52,21 @@ ANALYZE_CV_PROMPT = """You are given a resume below. Analyze it and return the d
   ]
 }
 """
+
+
+def get_interview_prompt(skills, language):
+    INTERVIEW_PROMPT = """
+You are a career counselor conducting a mock interview with a candidate. The candidate possesses the skills listed below. Please generate one interview question related to one of these skills. Return the output strictly in the following JSON format. Do not include any additional text, comments, or explanations. Use only valid JSON. The keys in the JSON must be in English and match the structure exactly. The question must be in the language specified in the language field. If the language is not specified, return the question in English.
+JSON Output Format:
+
+{{
+  "skill": "<The selected skill>",
+  "question": "<The interview question in the specified language>"
+}}
+
+Use the skills provided below:
+
+{skills}
+
+Language: {language}"""
+    return INTERVIEW_PROMPT.format(skills=skills, language=language)

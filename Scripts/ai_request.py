@@ -34,10 +34,9 @@ def process_file_with_gemini(
         return None
 
 
-
 def parse_json_block(raw_text: str) -> dict | None:
     """
-    Cleans the given markdown formatted JSON block and converts it to a Python dict object. 
+    Cleans the given markdown formatted JSON block and converts it to a Python dict object.
     Returns None if there is erroneous JSON.
     """
     try:
@@ -49,10 +48,26 @@ def parse_json_block(raw_text: str) -> dict | None:
         return None
 
 
-
 def parse_date(date_str):
-        try:
-            return datetime.strptime(date_str, "%Y-%m-%d").date()
-        except Exception as e:
-            print(f"[HATA] Tarih ayrıştırılamadı: {e}\n {date_str}")
-            return None
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
+    except Exception as e:
+        print(f"[HATA] Tarih ayrıştırılamadı: {e}\n {date_str}")
+        return None
+
+
+
+def generate_interview_question_gemini(
+    prompt_text: str,
+    model_name: str = "gemini-2.5-flash-preview-04-17",
+):
+    try:
+        model = gen_ai.GenerativeModel(model_name)
+        response = model.generate_content(prompt_text)
+
+        return response.text
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+

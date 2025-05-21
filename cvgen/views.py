@@ -1,7 +1,12 @@
-from Scripts.ai_request import parse_json_block, process_file_with_gemini, parse_date
+from Scripts.ai_request import (
+    parse_json_block,
+    process_file_with_gemini,
+    parse_date,
+    generate_interview_question_gemini,
+)
 from cvgen import models, serializers
 from cvgen.serializers import UploadCvSerializer
-from helpers.ai_prompts import ANALYZE_CV_PROMPT
+from helpers.ai_prompts import ANALYZE_CV_PROMPT, get_interview_prompt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -249,7 +254,6 @@ class GenerateCvPdfView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        
         profile = models.Profile.objects.get(user=user)
         experience = profile.experience.all()
         education = profile.education.all()
@@ -273,3 +277,56 @@ class GenerateCvPdfView(APIView):
         response = HttpResponse(pdf_content, content_type="application/pdf")
         response["Content-Disposition"] = "filename=converted.pdf"
         return response
+
+
+class StartInterviewApiView(APIView):
+    permission_classes = [IsAuthenticated]
+    # TODO: What if the user has no skills?
+    # TODO: What errors can occur and how to handle them?
+
+    def get(self, request):
+        try:
+            user = request.user
+            profile = models.Profile.objects.get(user=user)
+
+            interview = models.Interview.objects.create(profile=profile)
+
+            prompt = get_interview_prompt(profile.skills.all(), profile.language)
+            print("PROMPT:", prompt)
+
+            result = generate_interview_question_gemini(prompt_text=prompt)
+            print("RESULT:", result)
+
+            result = parse_json_block(result)
+
+            question = result.get("question", "")
+            skill = models.Skill.objects.filter(
+                profile=profile, name=result.get("skill")
+            ).first()
+
+            interview_question = models.InterviewQuestion.objects.create(
+                interview=interview, question=question, skill=skill
+            )
+
+            return Response(
+                {
+                    "result": "success",
+                    "message": "Interview started successfully.",
+                    "data": {
+                        "interview_id": interview.id,
+                        "question_id": interview_question.id,
+                        "question": question,
+                        "skill": skill.name,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            print("EXCEPTION:", e)
+            return Response(
+                {
+                    "result": "fail",
+                    "message": "An error occurred, please try again.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
