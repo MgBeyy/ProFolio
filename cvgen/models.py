@@ -21,6 +21,7 @@ class Profile(BaseModel):
     location = models.CharField(max_length=255, blank=True, null=True)
     linkedin = models.URLField(blank=True, null=True)
     github = models.URLField(blank=True, null=True)
+    language = models.CharField(max_length=100, blank=True, null=True) # Language of the interview questions
     
 
     def __str__(self):
