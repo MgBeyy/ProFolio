@@ -1,0 +1,317 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional CV</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+
+        }
+        
+        /* Header styles */
+        .header {
+            padding: 40px;
+            background-color: #2c3e50;
+            color: white;
+            position: relative;
+        }
+        
+        .name {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .title {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-weight: 400;
+            color: #ecf0f1;
+        }
+        
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .contact-info div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Main content styles */
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .summary {
+            margin-bottom: 30px;
+            line-height: 1.7;
+        }
+        
+        /* Experience and Education items */
+        .item {
+            margin-bottom: 25px;
+        }
+        
+        .item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #2c3e50;
+        }
+        
+        .item-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .item-subtitle {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 8px;
+        }
+        
+        .item-description {
+            color: #555;
+        }
+        
+        /* Skills section */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .skill {
+            background-color: #f1f8fe;
+            border: 1px solid #d1e8ff;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            color: #3498db;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px;
+            }
+            
+            .content {
+                padding: 30px;
+            }
+            
+            .name {
+                font-size: 2rem;
+            }
+            
+            .item-header {
+                flex-direction: column;
+            }
+            
+            .item-date {
+                margin-top: 5px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header, .content {
+                padding: 20px;
+            }
+            
+            .contact-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <!-- Header Section -->
+        <header class="header">
+            <h1 class="name">{{ profile.user.first_name }} {{ profile.user.last_name }}</h1>
+            {% if profile.title %}
+            <p class="title">{{ profile.title }}</p>
+            {% endif %}
+            <div class="contact-info">
+                {% if profile.user.email %}
+                <div class="email">
+                    <span>Email:</span>
+                    <span>{{ profile.user.email }}</span>
+                </div>
+                {% endif %}
+                {% if profile.phone %}
+                <div class="phone">
+                    <span>Phone:</span>
+                    <span>{{ profile.phone }}</span>
+                </div>
+                {% endif %}
+                {% if profile.location %}
+                <div class="location">
+                    <span>Location:</span>
+                    <span>{{ profile.location }}</span>
+                </div>
+                {% endif %}
+                {% if profile.linkedin %}
+                <div class="linkedin">
+                    <span>LinkedIn:</span>
+                    <span>{{ profile.linkedin }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Professional Summary -->
+            {% if profile.summary %}
+            <section class="section">
+                <h2 class="section-title">Professional Summary</h2>
+                <div class="summary">
+                    <p>{{ profile.summary }}</p>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Work Experience -->
+            {% if experience %}
+            <section class="section">
+                <h2 class="section-title">Work Experience</h2>
+                {% for exp in experience %}
+                <div class="item">
+                    <div class="item-header">
+                        <h3 class="item-title">{{ exp.position }}</h3>
+                        <span class="item-date">{{ exp.start_date|date:"F Y" }} - {{ exp.end_date|date:"F Y" }}</span>
+                    </div>
+                    <div class="item-subtitle">{{ exp.company }}</div>
+                    <div class="item-description">
+                        <p>{{ exp.description }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <!-- Education -->
+            {% if education %}
+            <section class="section">
+                <h2 class="section-title">Education</h2>
+                {% for edu in education %}
+                <div class="item">
+                    <div class="item-header">
+                        <h3 class="item-title">{{ edu.degree }}</h3>
+                        <span class="item-date">{{ edu.start_date|date:"Y" }} - {{ edu.end_date|date:"Y" }}</span>
+                    </div>
+                    <div class="item-subtitle">{{ edu.school }}</div>
+                    <div class="item-description">
+                        <p>{{ edu.description }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <!-- Skills -->
+            {% if skills %}
+            <section class="section">
+                <h2 class="section-title">Skills</h2>
+                <div class="skills-container">
+                    {% for skill in skills %}
+                        <span class="skill">{{ skill.name }}</span>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Certifications -->
+            {% if certifications %}
+            <section class="section">
+                <h2 class="section-title">Certifications</h2>
+                {% for cert in certifications %}
+                <div class="item">
+                    <div class="item-header">
+                        <h3 class="item-title">{{ cert.name }}</h3>
+                        <span class="item-date">{{ cert.end_date|date:"Y" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <!-- Projects -->
+            {% if projects %}
+            <section class="section">
+                <h2 class="section-title">Projects</h2>
+                {% for project in projects %}
+                <div class="item">
+                    <div class="item-header">
+                        <h3 class="item-title">{{ project.title }}</h3>
+                        {% if project.project_url %}
+                        <span class="item-date"><a href="{{ project.project_url }}" target="_blank">View Project</a></span>
+                        {% endif %}
+                    </div>
+                    <div class="item-subtitle">{{ project.technologies }}</div>
+                    <div class="item-description">
+                        <p>{{ project.description }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <!-- Languages -->
+            {% if languages %}
+            <section class="section">
+                <h2 class="section-title">Languages</h2>
+                <div class="skills-container">
+                    {% for lang in languages %}
+                        <span class="skill">{{ lang.language }} ({{ lang.level }})</span>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>

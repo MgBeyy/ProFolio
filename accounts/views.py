@@ -1,5 +1,6 @@
 from Scripts.host_data import get_current_host_url
 from accounts.models import UserEmailToken
+from cvgen.models import Profile
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.models import User
@@ -7,7 +8,6 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .serializers import SignUpSerializer, UserDataSerializer
-from django.db import DatabaseError
 import re
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
@@ -64,14 +64,15 @@ class RegisterApiView(APIView):
         hashed_password = make_password(password=password)
 
         try:
-            _ = User.objects.create(
+            user = User.objects.create(
                 email=email,
                 username=username,
                 password=hashed_password,
                 first_name=first_name,
                 last_name=last_name,
             )
-        except DatabaseError as e:  # Todo: We can't show this error code to the user, but we need to store it somewhere, right?
+            _ = Profile.objects.create(user=user)
+        except Exception as e:  # Todo: We can't show this error code to the user, but we need to store it somewhere, right?
             print(f"HATA: {e}")
             return Response(
                 {
@@ -103,12 +104,12 @@ class VerifyEmailApiView(APIView):
             )
         user = User.objects.filter(email=user_email).first()
 
-        user_token = UserEmailToken.objects.get_or_create(
-            user=user,
-            email_verification_token=get_random_string(40),
-            email_verification_expire=timezone.now() + timedelta(minutes=10),
-            is_verified=False,
-        )
+        user_token, _ = UserEmailToken.objects.get_or_create(user=user)
+        user_token.email_verification_token = get_random_string(40)
+        user_token.email_verification_expire = timezone.now() + timedelta(minutes=10)
+        user_token.is_verified = False
+
+        user_token.save()
 
         host = get_current_host_url(request)
 
@@ -123,9 +124,9 @@ class VerifyEmailApiView(APIView):
             return Response(
                 {
                     "result": "success",
-                    "message": "Successfully created account. Please check your email inbox to verify the email.",
+                    "message": "Successfully sent verification email. Please check your email inbox to verify the email.",
                 },
-                status=status.HTTP_201_CREATED,
+                status=status.HTTP_200_OK,
             )
         else:
             return Response(
@@ -178,7 +179,7 @@ class UserApiView(APIView):
 
     def put(self, request):
         req_user = UserDataSerializer(request.user)
-        user = User.objects.filter(email=req_user.get("email")).first()
+        user = User.objects.filter(email=req_user.data.get("email")).first()
 
         first_name = request.data.get("first_name")
         last_name = request.data.get("last_name")
@@ -204,7 +205,7 @@ class UserApiView(APIView):
         return Response(
             {
                 "result": "success",
-                "message": "Successfly updated user data.",
+                "message": "successfully updated user data.",
             },
             status=status.HTTP_200_OK,
         )
@@ -227,6 +228,7 @@ class UserApiView(APIView):
 class VerifyEmailConfirmApiView(APIView):
     def get(self, request):
         token = request.query_params.get("token")
+        print("TOKEN", token)
 
         if not UserEmailToken.objects.filter(email_verification_token=token).exists():
             return Response(
