@@ -63,8 +63,7 @@ class Certification(BaseModel):
     )
     name = models.CharField(max_length=100, blank=True, null=True)
     organization = models.CharField(max_length=100)
-    start_date = models.DateField(blank=True, null=True)
-    end_date = models.DateField(blank=True, null=True)
+    date = models.DateField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
