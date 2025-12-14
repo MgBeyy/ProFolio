@@ -64,7 +64,6 @@ To run this Django REST Framework (DRF) project, follow these steps:
 7. **API Documentation**  
     If API documentation is available, you can access it at `http://127.0.0.1:8000/api/docs/` (not yet configured).
 
-**Note:** Ensure you have Python installed on your system before running the project.
-
+**Note:** Ensure you have Python installed on your system before running the project
 
 
